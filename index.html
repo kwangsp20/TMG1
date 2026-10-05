@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Tamagotchi</title>
+
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #111;
+    }
+
+    .panel {
+      position: fixed;
+      z-index: 10;
+      top: 16px;
+      left: 50%;
+      width: min(92vw, 380px);
+      padding: 14px 16px;
+      transform: translateX(-50%);
+      color: #35234e;
+      background: rgba(255, 255, 255, 0.94);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    .title {
+      margin: 0 0 4px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    #status {
+      margin: 0 0 10px;
+      color: #695c79;
+      font-size: 14px;
+    }
+
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .meter {
+      height: 12px;
+      overflow: hidden;
+      background: #eee7f6;
+      border-radius: 99px;
+    }
+
+    #meterFill {
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff9e72, #ffcf70);
+      border-radius: inherit;
+      transition: width 250ms ease, background 250ms ease;
+    }
+
+    #feedButton {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 14px;
+      color: #fff;
+      background: #8058d6;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    #feedButton:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    #feedButton:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .hint {
+      position: fixed;
+      z-index: 10;
+      bottom: 14px;
+      left: 50%;
+      width: min(92vw, 420px);
+      padding: 9px 12px;
+      transform: translateX(-50%);
+      color: #fff;
+      background: rgba(25, 20, 35, 0.72);
+      border-radius: 12px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .a-enter-vr,
+    .a-enter-ar {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <section class="panel" aria-live="polite">
+    <h1 class="title">🐣 AR Tamagotchi</h1>
+    <p id="status">กำลังเปิดกล้อง…</p>
+
+    <div class="meter-label">
+      <span>ความอิ่ม</span>
+      <span id="hungerText">70%</span>
+    </div>
+    <div class="meter" aria-label="ระดับความอิ่ม">
+      <div id="meterFill"></div>
+    </div>
+
+    <button id="feedButton" type="button" disabled>🍓 ป้อนอาหาร</button>
+  </section>
+
+  <div class="hint">อนุญาตให้ใช้กล้อง แล้วส่องไปที่ Hiro marker</div>
+
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+  >
+    <a-marker
+      id="hiroMarker"
+      preset="hiro"
+      emitevents="true"
+      smooth="true"
+      smooth-count="5"
+      smooth-tolerance="0.01"
+      smooth-threshold="2"
+    >
+      <!-- ตัวละคร -->
+      <a-entity id="pet" position="0 0 0">
+        <!-- เงาใต้ตัว -->
+        <a-entity
+          geometry="primitive: circle; radius: 0.38"
+          material="color: #49325f; opacity: 0.18; transparent: true"
+          rotation="-90 0 0"
+          position="0 0.015 0"
+        ></a-entity>
+
+        <!-- กลุ่มตัวละครเด้งเบา ๆ -->
+        <a-entity
+          id="petBody"
+          position="0 0 0"
+          animation="property: position; to: 0 0.06 0; dir: alternate; dur: 850; loop: true; easing: easeInOutSine"
+        >
+          <!-- หู -->
+          <a-sphere
+            color="#ffb5cf"
+            radius="0.16"
+            position="-0.25 0.98 0"
+            scale="0.75 1.1 0.55"
+          ></a-sphere>
+          <a-sphere
+            color="#ffb5cf"
+            radius="0.16"
+            position="0.25 0.98 0"
+            scale="0.75 1.1 0.55"
+          ></a-sphere>
+
+          <!-- ลำตัว -->
+          <a-sphere
+            color="#ffcae0"
+            radius="0.38"
+            position="0 0.68 0"
+          ></a-sphere>
+
+          <!-- แก้ม -->
+          <a-sphere
+            color="#ff8eaa"
+            radius="0.075"
+            position="-0.23 0.62 0.315"
+            scale="1 0.7 0.35"
+          ></a-sphere>
+          <a-sphere
+            color="#ff8eaa"
+            radius="0.075"
+            position="0.23 0.62 0.315"
+            scale="1 0.7 0.35"
+          ></a-sphere>
+
+          <!-- ดวงตา -->
+          <a-sphere
+            color="#392746"
+            radius="0.035"
+            position="-0.12 0.75 0.355"
+            scale="0.8 1.3 0.5"
+          ></a-sphere>
+          <a-sphere
+            color="#392746"
+            radius="0.035"
+            position="0.12 0.75 0.355"
+            scale="0.8 1.3 0.5"
+          ></a-sphere>
+
+          <!-- ปาก -->
+          <a-torus
+            id="petMouth"
+            color="#8e456b"
+            radius="0.045"
+            radius-tubular="0.012"
+            arc="180"
+            position="0 0.59 0.367"
+            rotation="0 0 180"
+          ></a-torus>
+
+          <!-- ท้อง -->
+          <a-sphere
+            color="#fff0b5"
+            radius="0.16"
+            position="0 0.43 0.29"
+            scale="1 0.82 0.35"
+          ></a-sphere>
+
+          <!-- เท้า -->
+          <a-sphere
+            color="#f49bbd"
+            radius="0.11"
+            position="-0.19 0.12 0.06"
+            scale="1.25 0.7 1"
+          ></a-sphere>
+          <a-sphere
+            color="#f49bbd"
+            radius="0.11"
+            position="0.19 0.12 0.06"
+            scale="1.25 0.7 1"
+          ></a-sphere>
+
+          <!-- อาหารที่บินเข้าปากตอนกดปุ่ม -->
+          <a-entity id="food" visible="false">
+            <a-sphere
+              color="#ff914d"
+              radius="0.09"
+              position="0 0 0"
+              scale="1 0.8 0.8"
+            ></a-sphere>
+            <a-cone
+              color="#54bd70"
+              radius-bottom="0.045"
+              radius-top="0"
+              height="0.12"
+              position="0 0.105 0"
+            ></a-cone>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    (() => {
+      const marker = document.querySelector("#hiroMarker");
+      const feedButton = document.querySelector("#feedButton");
+      const statusText = document.querySelector("#status");
+      const meterFill = document.querySelector("#meterFill");
+      const hungerText = document.querySelector("#hungerText");
+      const food = document.querySelector("#food");
+      const mouth = document.querySelector("#petMouth");
+
+      let markerVisible = false;
+      let hunger = 70;
+      let isEating = false;
+
+      function updateHunger() {
+        hunger = Math.max(0, Math.min(100, hunger));
+        hungerText.textContent = `${hunger}%`;
+        meterFill.style.width = `${hunger}%`;
+
+        if (hunger <= 25) {
+          meterFill.style.background = "#f06478";
+        } else if (hunger <= 55) {
+          meterFill.style.background = "#ffad55";
+        } else {
+          meterFill.style.background = "linear-gradient(90deg, #ff9e72, #ffcf70)";
+        }
+      }
+
+      marker.addEventListener("markerFound", () => {
+        markerVisible = true;
+        feedButton.disabled = false;
+        statusText.textContent = "เจอ Hiro แล้ว! น้องกำลังรออาหาร 💕";
+      });
+
+      marker.addEventListener("markerLost", () => {
+        markerVisible = false;
+        feedButton.disabled = true;
+        statusText.textContent = "ยังไม่เห็น marker Hiro";
+      });
+
+      feedButton.addEventListener("click", () => {
+        if (!markerVisible || isEating) return;
+
+        isEating = true;
+        hunger = Math.min(100, hunger + 20);
+        updateHunger();
+
+        statusText.textContent = hunger >= 100
+          ? "อิ่มแล้ว ขอบคุณนะ! 😋"
+          : "ง่ำ ๆ อร่อยจัง! 😋";
+
+        food.setAttribute("visible", true);
+        food.setAttribute("position", "0 1.35 0.35");
+        food.setAttribute(
+          "animation__feed",
+          "property: position; from: 0 1.35 0.35; to: 0 0.72 0.35; dur: 450; easing: easeInQuad"
+        );
+
+        mouth.setAttribute("scale", "1.5 1 1");
+
+        window.setTimeout(() => {
+          food.setAttribute("visible", false);
+          food.removeAttribute("animation__feed");
+          mouth.removeAttribute("scale");
+          isEating = false;
+
+          if (markerVisible && hunger < 25) {
+            statusText.textContent = "หิวแล้ว ช่วยป้อนอาหารหน่อยนะ 🥺";
+          } else if (markerVisible) {
+            statusText.textContent = "น้องมีความสุขแล้ว 💖";
+          }
+        }, 550);
+      });
+
+      // ค่อย ๆ ลดความอิ่มทุก 12 วินาที
+      window.setInterval(() => {
+        if (hunger > 0) {
+          hunger = Math.max(0, hunger - 1);
+          updateHunger();
+        }
+
+        if (markerVisible && hunger < 25 && !isEating) {
+          statusText.textContent = "หิวแล้ว ช่วยป้อนอาหารหน่อยนะ 🥺";
+        }
+      }, 12000);
+
+      updateHunger();
+    })();
+  </script>
+</body>
+</html>
